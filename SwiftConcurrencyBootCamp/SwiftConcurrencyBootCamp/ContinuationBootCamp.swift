@@ -36,6 +36,20 @@ class ContinuationBootCampMnanager {
         }
         
     }
+    
+    func getHeartImageFromDatabase(completionHandler: @escaping (_ image: UIImage) -> ()) {
+        DispatchQueue.main.asyncAfter(deadline: .now() + 5) {
+            completionHandler(UIImage(systemName: "heart.fill")!)
+        }
+    }
+    
+    func getHeartImageFromDatabase() async -> UIImage {
+        await withCheckedContinuation { continuation in
+            getHeartImageFromDatabase { image in
+                continuation.resume(returning: image)
+            }
+        }
+    }
 }
 class ContinuationBootCampViewModel: ObservableObject {
     @Published var image: UIImage? = nil
@@ -52,6 +66,10 @@ class ContinuationBootCampViewModel: ObservableObject {
     }
     
     
+    func getHeartImage() async{
+        self.image = await netWorkManager.getHeartImageFromDatabase()
+    }
+    
     
 }
 struct ContinuationBootCamp: View {
@@ -67,7 +85,7 @@ struct ContinuationBootCamp: View {
             }
         }
         .task {
-            await viewModel.getImage()
+            await viewModel.getHeartImage()
         }
     }
 }
