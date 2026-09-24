@@ -8,12 +8,16 @@ import Combine
 import SwiftUI
 actor MyNewDataManager {
     
+    func getDataFromDatabase() -> [String]{
+        return ["One", "Two", "Three", "Four", "Five", "Six"]
+    }
 }
 class GlobalActorBootCampViewModel: ObservableObject {
     @Published var dataArray:[String] = []
     let manager = MyNewDataManager()
-    func getData() {
-        
+    func getData() async {
+        let data = await manager.getDataFromDatabase()
+        self.dataArray = data
     }
 }
 struct GlobalActorBootCamp: View {
