@@ -31,7 +31,6 @@ extension EmployeeDTO {
             id: id,
             name: name,
             email: email,
-            phone: phone,
             companyName: company.name
         )
     }
