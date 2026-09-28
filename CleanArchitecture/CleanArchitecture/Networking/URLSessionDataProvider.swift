@@ -4,6 +4,13 @@
 //
 //  Created by Akanksha on 25/09/26.
 //
+
+enum HTTPMethod: String {
+    case get = "GET"
+    case post = "POST"
+    case put = "PUT"
+    case delete = "DELETE"
+}
 import Foundation
 final class URLSessionDataProvider: DataProvider {
 
@@ -18,14 +25,10 @@ final class URLSessionDataProvider: DataProvider {
         self.retryCount = retryCount
     }
 
-    func get(
-        endpoint: Endpoint
-    ) async throws -> Data {
-
-        try await performRequest(
+    func get(endpoint: Endpoint) async throws -> Data {
+        try await executeRequest(
             endpoint: endpoint,
-            method: "GET",
-            body: nil
+            method: HTTPMethod.get.rawValue
         )
     }
 
@@ -33,10 +36,9 @@ final class URLSessionDataProvider: DataProvider {
         endpoint: Endpoint,
         body: Data
     ) async throws -> Data {
-
-        try await performRequest(
+        try await executeRequest(
             endpoint: endpoint,
-            method: "POST",
+            method: HTTPMethod.post.rawValue,
             body: body
         )
     }
@@ -45,36 +47,29 @@ final class URLSessionDataProvider: DataProvider {
         endpoint: Endpoint,
         body: Data
     ) async throws -> Data {
-
-        try await performRequest(
+        try await executeRequest(
             endpoint: endpoint,
-            method: "PUT",
+            method: HTTPMethod.put.rawValue,
             body: body
         )
     }
 
-    func delete(
-        endpoint: Endpoint
-    ) async throws -> Data {
-
-        try await performRequest(
+    func delete(endpoint: Endpoint) async throws -> Data {
+        try await executeRequest(
             endpoint: endpoint,
-            method: "DELETE",
-            body: nil
+            method: "DELETE"
         )
     }
 }
 private extension URLSessionDataProvider {
 
-    func performRequest(
+    private func executeRequest(
         endpoint: Endpoint,
         method: String,
-        body: Data?
+        body: Data? = nil
     ) async throws -> Data {
 
-        var request = URLRequest(
-            url: endpoint.url
-        )
+        var request = URLRequest(url: endpoint.url)
 
         request.httpMethod = method
         request.httpBody = body
@@ -99,33 +94,26 @@ private extension URLSessionDataProvider {
         var lastError: Error?
 
         for attempt in 0...retryCount {
-
             do {
+                let (data, response) = try await session.data(
+                    for: request
+                )
 
-                let (data, response) =
-                    try await session.data(
-                        for: request
-                    )
-
-                guard let httpResponse =
-                        response as? HTTPURLResponse
-                else {
+                guard let response = response as? HTTPURLResponse else {
                     throw NetworkError.badURLResponse(
                         url: endpoint.url
                     )
                 }
 
-                guard 200..<300 ~= httpResponse.statusCode
-                else {
+                guard 200..<300 ~= response.statusCode else {
                     throw NetworkError.statusCode(
-                        httpResponse.statusCode
+                        response.statusCode
                     )
                 }
 
                 return data
 
             } catch {
-
                 lastError = error
 
                 if attempt < retryCount {
